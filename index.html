@@ -265,6 +265,26 @@ input[type=number]{-moz-appearance:textfield;}
 /* ═══ ADD CAT / CARD TOTAL / RESET ═══ */
 .add-cat-btn{display:flex;align-items:center;justify-content:center;gap:4px;width:calc(100% - 32px);margin:2px 16px 6px;padding:7px;border:1.5px dashed var(--parch);border-radius:var(--pill);background:transparent;font-family:'Manrope',sans-serif;font-size:.7rem;color:var(--ink3);cursor:pointer;}
 .add-cat-btn:hover{border-color:var(--forest);color:var(--forest);background:var(--fl);}
+
+/* ═══ CATEGORY PICKER ═══ */
+.cat-picker{background:#fff;border:1.5px solid var(--parch);border-radius:var(--r);box-shadow:var(--sh);padding:14px 14px 12px;margin:0 16px 8px;animation:fadeD .15s ease;}
+.cat-picker-title{font-size:.6rem;text-transform:uppercase;letter-spacing:.12em;color:var(--ink3);font-weight:700;margin-bottom:10px;}
+.cat-picker-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:10px;}
+.cpick-btn{display:flex;align-items:center;gap:6px;padding:7px 9px;border:1.5px solid var(--parch);border-radius:var(--rm);background:#fff;cursor:pointer;font-family:'Manrope',sans-serif;font-size:.75rem;color:var(--ink2);transition:all .14s;text-align:left;width:100%;}
+.cpick-btn:hover{border-color:var(--forest);color:var(--forest);background:var(--fl);}
+.cpick-btn.used{opacity:.28;pointer-events:none;cursor:default;}
+.cpick-ico{font-size:.85rem;flex-shrink:0;}
+.cat-pick-custom{display:flex;gap:6px;border-top:1px solid var(--ivory-d);padding-top:10px;}
+.cat-pick-inp{flex:1;background:var(--ivory-d);border:1.5px solid var(--parch);border-radius:var(--pill);padding:6px 12px;font-family:'Manrope',sans-serif;font-size:.78rem;color:var(--ink);outline:none;min-width:0;}
+.cat-pick-inp:focus{border-color:var(--forest);background:#fff;box-shadow:0 0 0 3px var(--fl);}
+.cat-pick-inp::placeholder{color:var(--ink3);}
+.cat-pick-add{padding:6px 14px;background:var(--forest);color:#fff;border:none;border-radius:var(--pill);font-family:'Manrope',sans-serif;font-size:.76rem;font-weight:600;cursor:pointer;flex-shrink:0;white-space:nowrap;}
+.cat-pick-add:hover{background:var(--fd);}
+.q-del{background:none;border:none;cursor:pointer;font-size:.9rem;color:var(--ink3);padding:0 2px;line-height:1;flex-shrink:0;}
+.q-del:hover{color:var(--coral);}
+.cat-head-del{background:none;border:none;cursor:pointer;font-size:.85rem;color:rgba(255,255,255,0);padding:0 2px;line-height:1;flex-shrink:0;transition:color .15s;}
+.cat-block:hover .cat-head-del{color:var(--ink3);}
+.cat-head-del:hover{color:var(--coral)!important;}
 .card-total{margin:8px 0 0 0;border-radius:0 0 var(--r) var(--r);padding:14px 18px;display:flex;align-items:center;justify-content:space-between;color:#fff;}
 .ct0{background:linear-gradient(135deg,#0D3D26,var(--forest));box-shadow:0 4px 18px rgba(31,107,74,.2);}
 .ct1{background:linear-gradient(135deg,#8A2A18,var(--coral));box-shadow:0 4px 18px rgba(176,74,40,.2);}
@@ -608,6 +628,14 @@ const CAT={
   other:{i:'✏️',n:'Other',a:'Add item'}
 };
 const DCATS=['flight','stay','food','transport','activities','insurance','other'];
+const EXTRA_CATS=[
+  {i:'💊',n:'Health & pharmacy'},{i:'🧳',n:'Luggage fees'},
+  {i:'🅿️',n:'Parking & tolls'},{i:'🚢',n:'Ferries & transfers'},
+  {i:'☕',n:'Coworking & cafés'},{i:'🎁',n:'Gifts'},
+  {i:'🛍️',n:'Shopping'},{i:'🎭',n:'Entertainment'},
+  {i:'📱',n:'SIM & connectivity'},{i:'🚗',n:'Car rental & fuel'},
+  {i:'👶',n:'Kids & baby'},{i:'🍹',n:'Drinks & bars'}
+];
 
 const RC={
   'Paris':{min:120,avg:180,max:300,flag:'🇫🇷'},
@@ -655,7 +683,7 @@ function newSc(id){
 }
 
 let S={scs:[],aid:null,dep:'quick',nid:1};
-let activeForm=null,dayMode='single';
+let activeForm=null,dayMode='single',activePicker=null;
 
 const gA=()=>S.scs.find(s=>s.id===S.aid);
 const fmt=n=>Number(n).toLocaleString('en',{maximumFractionDigits:0});
@@ -888,6 +916,30 @@ function updDisp(sid){
    CATEGORY INTERACTIONS
 ══════════════════════════════════ */
 function clrQA(sid,cid){const sc=S.scs.find(s=>s.id===sid);const c=sc?.cats.find(x=>x.id===cid);if(!c)return;c.qa=0;renderCards();updDisp(sid);}
+
+/* ══════════════════════════════════
+   CATEGORY PICKER
+══════════════════════════════════ */
+function togPicker(scId){activePicker=activePicker===scId?null:scId;renderCards();if(activePicker)setTimeout(()=>document.getElementById('cpick-inp-'+scId)?.focus(),60);}
+function addCatFromPicker(scId,ico,name){
+  const sc=S.scs.find(s=>s.id===scId);if(!sc)return;
+  const cid='xc_'+Date.now();
+  sc.cats.push({id:cid,ico,name,qa:0,recs:[],open:false,removable:true});
+  activePicker=null;renderCards();autoSave();
+}
+function addCustomCat(scId){
+  const inp=document.getElementById('cpick-inp-'+scId);
+  const val=inp?.value.trim();if(!val)return;
+  addCatFromPicker(scId,'✏️',val);
+}
+function removeCat(scId,cid,e){
+  if(e)e.stopPropagation();
+  const sc=S.scs.find(s=>s.id===scId);if(!sc)return;
+  sc.cats=sc.cats.filter(c=>c.id!==cid);
+  if(sc.oc[cid])delete sc.oc[cid];
+  renderCards();updDisp(scId);autoSave();
+}
+
 function togCat(sid,cid){const sc=S.scs.find(s=>s.id===sid);if(sc){sc.oc[cid]=!sc.oc[cid];renderCards();}}
 function addRec(sid,cid){
   const sc=S.scs.find(s=>s.id===sid);const c=sc?.cats.find(x=>x.id===cid);if(!c)return;
@@ -941,7 +993,7 @@ function buildTL(sc){
   for(let d=1;d<=days;d++)h+=`<th class="tl-th">D${d}</th>`;
   h+=`</tr></thead><tbody>`;
   sc.dexps.forEach(e=>{
-    const cfg=CAT[e.cat]||CAT.other,col=TLC[e.cat]||'#9A9080';
+    const cfg=sc.cats.find(c=>c.id===e.cat)||CAT[e.cat]||CAT.other,col=TLC[e.cat]||'#9A9080';
     h+=`<tr><td class="tl-cc">${cfg.i} ${e.desc||cfg.n}</td>`;
     for(let d=1;d<=days;d++){
       const inR=d>=e.from&&d<=e.to;let br='4px';
@@ -1042,9 +1094,10 @@ function renderCards(){
           <label class="q-lbl">${c.name}</label>
           <input class="q-inp" type="text" inputmode="decimal" placeholder="${sym} 0"
             value="${c.qa>0?c.qa:''}" oninput="onQA(${sc.id},'${c.id}',this.value)"/>
+          ${c.removable?`<button class="q-del" onclick="removeCat(${sc.id},'${c.id}',event)" title="Remove">×</button>`:''}
         </div>`).join('')}</div>
       ${breakdownHTML}
-      <button class="add-cat-btn">＋ Add category</button>
+      <button class="add-cat-btn" onclick="togPicker(${sc.id})">＋ Add category</button>
     </div>`;
 
     // By category level
@@ -1057,6 +1110,7 @@ function renderCards(){
             <span class="cat-nl">${c.name}</span>
             ${hasR?`<span class="cat-cnt">${c.recs.length}</span>`:''}
             <span class="cat-sub ${cT>0?'':'z'}">${cT>0?sym+fmt(cT):'—'}</span>
+            ${c.removable?`<button class="cat-head-del" onclick="removeCat(${sc.id},'${c.id}',event)" title="Remove category">×</button>`:''}
             <span class="cat-chev ${isO?'open':''}">▸</span>
           </div>
           ${isO?`<div class="cat-body">
@@ -1085,7 +1139,7 @@ function renderCards(){
           </div>`:''}
         </div>`;
       }).join('')}</div>
-      <button class="add-cat-btn">＋ Add category</button>
+      <button class="add-cat-btn" onclick="togPicker(${sc.id})">＋ Add category</button>
     </div>`;
 
     // Day by day level
@@ -1093,7 +1147,7 @@ function renderCards(){
     const dayHTML=`<div class="${S.dep==='day'?'':'hidden'}">
       <div class="day-section">
         ${sc.dexps.length===0&&!isFA?`<div style="padding:7px 0 9px;font-size:.76rem;color:var(--ink3);text-align:center">Add expenses with day ranges below</div>`:''}
-        ${sc.dexps.map(e=>{const cfg=CAT[e.cat]||CAT.other;return`
+        ${sc.dexps.map(e=>{const cfg=sc.cats.find(c=>c.id===e.cat)||CAT[e.cat]||CAT.other;return`
           <div class="exp-item"><div class="exp-item-row">
             <span class="exp-badge ${CBC[e.cat]||'cb-ot'}">${cfg.i} ${cfg.n}</span>
             <span class="exp-dlbl ${e.desc?'':'ph'}">${e.desc||'No description'}</span>
@@ -1110,8 +1164,7 @@ function renderCards(){
             <div class="f-row">
               <span class="f-lbl">Category</span>
               <select class="f-sel" id="fc-${sc.id}">
-                ${DCATS.map(id=>`<option value="${id}">${CAT[id].i} ${CAT[id].n}</option>`).join('')}
-                <option value="other">✏️ Other</option>
+                ${sc.cats.map(c=>`<option value="${c.id}">${c.ico} ${c.name}</option>`).join('')}
               </select>
             </div>
             <div class="f-row">
@@ -1218,6 +1271,25 @@ function renderCards(){
     <div style="display:none"><div id="ga-${sc.id}"></div><div id="gm-${sc.id}"></div></div>
 
     ${qHTML}${catHTML}${dayHTML}
+
+    <!-- CATEGORY PICKER -->
+    ${activePicker===sc.id?`
+    <div class="cat-picker">
+      <div class="cat-picker-title">Add a category</div>
+      <div class="cat-picker-grid">
+        ${EXTRA_CATS.map(ec=>{
+          const used=sc.cats.some(c=>c.n===ec.n||c.name===ec.n);
+          return`<button class="cpick-btn${used?' used':''}" onclick="addCatFromPicker(${sc.id},'${ec.i}','${ec.n}')" ${used?'disabled':''}>
+            <span class="cpick-ico">${ec.i}</span><span>${ec.n}</span>
+          </button>`;
+        }).join('')}
+      </div>
+      <div class="cat-pick-custom">
+        <input class="cat-pick-inp" id="cpick-inp-${sc.id}" type="text" placeholder="Custom category name…" maxlength="40"
+          onkeydown="if(event.key==='Enter')addCustomCat(${sc.id})"/>
+        <button class="cat-pick-add" onclick="addCustomCat(${sc.id})">Add</button>
+      </div>
+    </div>`:''}
 
     <!-- CARD TOTAL -->
     <div class="card-total ${CTC[i%4]}">
@@ -1513,6 +1585,12 @@ function shareURL(){
       .catch(()=>prompt('Copy this link to share your trip plan:',u));
   }catch(e){alert('Could not generate link.');}
 }
+
+document.addEventListener('click',e=>{
+  if(activePicker!==null&&!e.target.closest('.cat-picker')&&!e.target.closest('.add-cat-btn')){
+    activePicker=null;renderCards();
+  }
+});
 
 function showToast(msg){
   let t=document.getElementById('toast');
