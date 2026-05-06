@@ -1,0 +1,26 @@
+# Vercel
+.vercel
+
+# macOS
+.DS_Store
+
+# Dev/prototype files — not for production
+index-staging.html
+destination-guide-prototype.html
+hybrid-prototype.html
+integration-prototype.html
+mobile-prototype-a.html
+mobile-prototype-b.html
+mobile-prototype-c.html
+mobile-prototypes.html
+vision-prototype.html
+destinations/bali/index-staging.html
+
+# Planning docs
+TripSpending-Growth-Plan.xlsx
+
+# AI session files
+.claude/
+
+# Production folder is just a local copy — not needed in git
+production/
